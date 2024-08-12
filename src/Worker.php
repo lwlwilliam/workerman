@@ -567,7 +567,7 @@ class Worker
             static::checkSapiEnv(); // comment: 检查 sapi 环境
             self::initStdOut(); // comment: 初始化标准输出
             static::init(); // comment: 初始化
-            static::parseCommand();
+            static::parseCommand(); // comment: 解释命令行参数
             static::lock();
             static::daemonize();
             static::initWorkers();
@@ -690,7 +690,7 @@ class Worker
         static::initId();
 
         // Timer init.
-        Timer::init();
+        Timer::init(); // comment: todo
     }
 
     /**
@@ -732,7 +732,7 @@ class Worker
         if (DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-        $lockFile = static::$pidFile . '.lock';
+        $lockFile = static::$pidFile . '.lock'; // comment: 进程锁？
         $fd = $fd ?: fopen($lockFile, 'a+');
         if ($fd) {
             flock($fd, $flag);
@@ -832,7 +832,7 @@ class Worker
      */
     protected static function initId(): void
     {
-        foreach (static::$workers as $workerId => $worker) {
+        foreach (static::$workers as $workerId => $worker) { // comment: 每个 worker ID 根据自己的 count 来生成对应数量的键值对吧
             $newIdMap = [];
             $worker->count = max($worker->count, 1);
             for ($key = 0; $key < $worker->count; $key++) {
@@ -964,7 +964,7 @@ class Worker
      */
     protected static function parseCommand(): void
     {
-        if (DIRECTORY_SEPARATOR !== '/') {
+        if (DIRECTORY_SEPARATOR !== '/') { // comment: workerman 用这个来判断操作系统类型
             return;
         }
 
@@ -1000,7 +1000,7 @@ class Worker
         // Start command.
         $modeStr = '';
         if ($command === 'start') {
-            if ($mode === '-d' || static::$daemonize) {
+            if ($mode === '-d' || static::$daemonize) { // comment: 可以通过 Worker::$daemonize = true 来指定
                 $modeStr = 'in DAEMON mode';
             } else {
                 $modeStr = 'in USER mode';
