@@ -564,9 +564,9 @@ class Worker
     public static function runAll(): void
     {
         try {
-            static::checkSapiEnv();
-            self::initStdOut();
-            static::init();
+            static::checkSapiEnv(); // comment: 检查 sapi 环境
+            self::initStdOut(); // comment: 初始化标准输出
+            static::init(); // comment: 初始化
             static::parseCommand();
             static::lock();
             static::daemonize();
@@ -591,7 +591,7 @@ class Worker
     protected static function checkSapiEnv(): void
     {
         // Only for cli and micro.
-        if (!in_array(\PHP_SAPI, ['cli', 'micro'])) {
+        if (!in_array(\PHP_SAPI, ['cli', 'micro'])) { // comment: 只允许在 cli 和 micro sapi 下运行
             exit("Only run in command line mode\n");
         }
     }
@@ -601,8 +601,8 @@ class Worker
         $defaultStream = fn () => \defined('STDOUT') ? \STDOUT : (@fopen('php://stdout', 'w') ?: fopen('php://output', 'w'));
         static::$outputStream ??= $defaultStream(); //@phpstan-ignore-line
         if (!\is_resource(self::$outputStream) || get_resource_type(self::$outputStream) !== 'stream') {
-            $type = get_debug_type(self::$outputStream);
-            static::$outputStream = $defaultStream();
+            $type = get_debug_type(self::$outputStream); // comment: 获取获取的 $outputStream 类型
+            static::$outputStream = $defaultStream(); // comment: 重新获取一次意义是啥？
             throw new \RuntimeException(sprintf('The $outputStream must to be a stream, %s given', $type));
         }
 
@@ -636,33 +636,36 @@ class Worker
 
     /**
      * Init.
+     * 1. 注册错误处理函数
+     * 2. 定义 pid 文件、status 文件、log 文件
+     * 3. 选择合适的全局 event loop 类
      *
      * @return void
      */
     protected static function init(): void
     {
-        set_error_handler(static function (int $code, string $msg, string $file, int $line): bool {
+        set_error_handler(static function (int $code, string $msg, string $file, int $line): bool { // 设置错误处理器
             static::safeEcho(sprintf("%s \"%s\" in file %s on line %d\n", static::getErrorType($code), $msg, $file, $line));
             return true;
         });
 
         // Start file.
         $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        static::$startFile ??= end($backtrace)['file'];
+        static::$startFile ??= end($backtrace)['file']; // comment: todo
         $startFilePrefix = hash('xxh64', static::$startFile);
 
         // Pid file.
-        static::$pidFile ??= sprintf('%s/workerman.%s.pid', dirname(__DIR__), $startFilePrefix);
+        static::$pidFile ??= sprintf('%s/workerman.%s.pid', dirname(__DIR__), $startFilePrefix); // comment: todo
 
         // Status file.
-        static::$statusFile ??= sprintf('%s/workerman.%s.status', dirname(__DIR__), $startFilePrefix);
+        static::$statusFile ??= sprintf('%s/workerman.%s.status', dirname(__DIR__), $startFilePrefix); // comment: todo
         static::$statisticsFile ??= static::$statusFile;
         static::$connectionsFile ??= static::$statusFile . '.connection';
 
         // Log file.
-        static::$logFile ??= sprintf('%s/workerman.log', dirname(__DIR__, 2));
+        static::$logFile ??= sprintf('%s/workerman.log', dirname(__DIR__, 2)); // comment: todo
 
-        if (!is_file(static::$logFile) && static::$logFile !== '/dev/null') {
+        if (!is_file(static::$logFile) && static::$logFile !== '/dev/null') { // comment: 创建日志目录及文件
             // if /runtime/logs  default folder not exists
             if (!is_dir(dirname(static::$logFile))) {
                 @mkdir(dirname(static::$logFile), 0777, true);
@@ -675,10 +678,10 @@ class Worker
         static::$status = static::STATUS_STARTING;
 
         // Init global event.
-        static::initGlobalEvent();
+        static::initGlobalEvent(); // comment: 选择全局 event loop，优先级 Revolt > Event > Select，如果想要其它的，自己用 Worker::$globalEvent 来指定
 
         // For statistics.
-        static::$globalStatistics['start_timestamp'] = time();
+        static::$globalStatistics['start_timestamp'] = time(); // comment: 开始运行时间
 
         // Process title.
         static::setProcessTitle('WorkerMan: master process  start_file=' . static::$startFile);
@@ -697,7 +700,7 @@ class Worker
      */
     protected static function initGlobalEvent(): void
     {
-        if (static::$globalEvent !== null) {
+        if (static::$globalEvent !== null) { // comment: 所以就可以通过 Worker::$globalEvent 来自指定 event loop 了
             static::$eventLoopClass = get_class(static::$globalEvent);
             static::$globalEvent = null;
             return;
@@ -710,7 +713,7 @@ class Worker
             return;
         }
 
-        static::$eventLoopClass = match (true) {
+        static::$eventLoopClass = match (true) { // comment: 优先级 Revolt > event > select
             class_exists(EventLoop::class) => Revolt::class,
             extension_loaded('event') => Event::class,
             default => Select::class,
@@ -2250,10 +2253,10 @@ class Worker
     public function __construct(string $socketName = null, array $socketContext = [])
     {
         // Save all worker instances.
-        $this->workerId = spl_object_hash($this);
-        $this->context = new stdClass();
-        static::$workers[$this->workerId] = $this;
-        static::$pidMap[$this->workerId] = [];
+        $this->workerId = spl_object_hash($this); // comment: 生成唯一的 worker 进程 ID
+        $this->context = new stdClass(); // comment: 自己的进程上下文
+        static::$workers[$this->workerId] = $this; // comment: 将进程和 worker ID 进行关联
+        static::$pidMap[$this->workerId] = []; // comment: worker ID 对应的子进程 ID，暂未 fork 出来
 
         // Context for socket.
         if ($socketName) {
