@@ -1,7 +1,9 @@
 <?php
+
 ini_set('error_reporting', E_ALL);
 ini_set('display_errors', 'on');
 var_dump(ini_get('display_errors'), ini_get('error_reporting'), E_ALL);
+
 use Workerman\Worker;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;

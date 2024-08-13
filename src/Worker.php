@@ -568,9 +568,9 @@ class Worker
             self::initStdOut(); // comment: 初始化标准输出
             static::init(); // comment: 初始化
             static::parseCommand(); // comment: 解释命令行参数
-            static::lock();
-            static::daemonize();
-            static::initWorkers();
+            static::lock(); // comment: 加互斥锁
+            static::daemonize(); // comment: 守护进程化
+            static::initWorkers(); // comment: 初始化 worker
             static::installSignal();
             static::saveMasterPid();
             static::lock(LOCK_UN);
@@ -755,18 +755,18 @@ class Worker
      */
     protected static function initWorkers(): void
     {
-        if (DIRECTORY_SEPARATOR !== '/') {
+        if (DIRECTORY_SEPARATOR !== '/') { // comment: 非类 unix 系统，直接退出
             return;
         }
 
         foreach (static::$workers as $worker) {
             // Worker name.
-            if (empty($worker->name)) {
+            if (empty($worker->name)) { // comment: worker 默认名
                 $worker->name = 'none';
             }
 
             // Get unix user of the worker process.
-            if (empty($worker->user)) {
+            if (empty($worker->user)) { // comment: 获取用户名
                 $worker->user = static::getCurrentUser();
             } else {
                 if (posix_getuid() !== 0 && $worker->user !== static::getCurrentUser()) {
@@ -775,7 +775,7 @@ class Worker
             }
 
             // Socket name.
-            $worker->context->statusSocket = $worker->getSocketName();
+            $worker->context->statusSocket = $worker->getSocketName(); // comment: 获取 socket 名称
 
             // Status name.
             $worker->context->statusState = '<g> [OK] </g>';
@@ -1303,7 +1303,7 @@ class Worker
      */
     protected static function daemonize(): void
     {
-        if (!static::$daemonize || DIRECTORY_SEPARATOR !== '/') {
+        if (!static::$daemonize || DIRECTORY_SEPARATOR !== '/') { // comment: 非类 unix 系统或者没有设置守护进程，直接退出
             return;
         }
         umask(0);
